@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  stt_proxy:
+    build: ./stt-proxy
+    container_name: stt_proxy
+    ports:
+      - "5001:5000"
+    volumes:
+      - ./stt-proxy:/app
+    restart: always
+
+  stt_cpu:
+    build: ./stt/cpu
+    container_name: stt_cpu
+    ports:
+      - "5002:5000"
+    restart: always
+
+  # GPU 컨테이너 (mac에서는 주석)
+  # stt_gpu:
+  #   build: ./stt/gpu
+  #   container_name: stt_gpu
+  #   ports:
+  #     - "5003:5000"
+  #   deploy:
+  #     resources:
+  #       reservations:
+  #         devices:
+  #           - capabilities: [gpu]
+  #   restart: always
+
+  control_panel:
+    image: nginx:latest
+    container_name: control_panel
+    ports:
+      - "8080:80"
+    volumes:
+      - ./control-panel:/usr/share/nginx/html:ro
+    restart: always
