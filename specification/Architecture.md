@@ -85,12 +85,31 @@
 
 ```
 ai-vtuber-project/
-└── stt/
-    ├── Dockerfile                # STT 서비스 빌드를 위한 도커파일
-    ├── requirements.txt          # 필요한 Python 패키지 목록
-    ├── app.py                    # FastAPI 기반 STT API 서버
-    ├── utils/
-    │   └── transcriber.py        # Whisper 래퍼 함수 모듈
-    └── models/
-        └── (Whisper 모델 캐시 저장 경로)
+├── docker-compose.yml
+│
+├── control-panel/
+│   ├── index.html
+│   ├── style.css
+│   └── toggle.js
+│
+├── stt/
+│   ├── cpu/
+│   │   ├── app.py
+│   │   ├── Dockerfile
+│   │   ├── requirements.txt
+│   │   └── utils/
+│   │       └── transcriber.py
+│   │
+│   ├── gpu/
+│   │   ├── app.py
+│   │   ├── Dockerfile
+│   │   ├── requirements.txt
+│   │   └── utils/
+│   │       └── transcriber.py
+│
+├── stt-proxy/
+│   ├── app.py
+│   ├── Dockerfile
+│   └── requirements.txt
+
 ```
