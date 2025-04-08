@@ -31,10 +31,14 @@ services:
   #   restart: always
 
   control_panel:
-    image: nginx:latest
+    build: ./control-panel
     container_name: control_panel
     ports:
-      - "8080:80"
-    volumes:
-      - ./control-panel:/usr/share/nginx/html:ro
+      - "80:80"
     restart: always
+    volumes:
+      - ./control-panel/conf/nginx.conf:/etc/nginx/nginx.conf
+      - ./control-panel/src:/usr/share/nginx/html
+    depends_on:
+      - stt_proxy
+
