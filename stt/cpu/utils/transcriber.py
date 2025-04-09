@@ -9,10 +9,10 @@ def model_loaded(device: str = "cpu", check_only: bool = False):
     if check_only:
         return device in MODEL_CACHE
     if device not in MODEL_CACHE:
-        MODEL_CACHE[device] = whisper.load_model("base", device=device)  # medium → base로 교체해도 가능
+        MODEL_CACHE[device] = whisper.load_model("base", device=device)  # 필요 시 medium도 가능
     return True
 
-def transcribe_audio(audio_bytes: bytes, filename: str, device: str = "cpu") -> str:
+def transcribe_audio(audio_bytes: bytes, filename: str, device: str = "cpu", prompt: str = "") -> str:
     model = MODEL_CACHE.get(device)
     if not model:
         raise RuntimeError(f"No model loaded for device: {device}")
@@ -30,7 +30,3 @@ def transcribe_audio(audio_bytes: bytes, filename: str, device: str = "cpu") -> 
             initial_prompt=prompt if prompt else None
         )
         return result["text"]
-
-def transcribe_audio(audio_bytes: bytes, filename: str, device: str = "cpu", prompt: str = "") -> str:
-    ...
-    
