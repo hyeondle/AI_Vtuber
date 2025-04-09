@@ -21,3 +21,12 @@ async def transcribe(file: UploadFile = File(...)):
         return JSONResponse(content={"text": result})
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
+
+@app.post("/transcribe-chunk")
+async def transcribe_chunk(file: UploadFile = File(...), initial_prompt: str = ""):
+    audio_bytes = await file.read()
+    try:
+        result = transcribe_audio(audio_bytes, file.filename, device="cpu", prompt=initial_prompt)
+        return JSONResponse(content={"text": result})
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=500)

@@ -26,6 +26,11 @@ def transcribe_audio(audio_bytes: bytes, filename: str, device: str = "cpu") -> 
             language="ko",
             temperature=0.0,
             best_of=5,
-            beam_size=5
+            beam_size=5,
+            initial_prompt=prompt if prompt else None
         )
         return result["text"]
+
+def transcribe_audio(audio_bytes: bytes, filename: str, device: str = "cpu", prompt: str = "") -> str:
+    ...
+    
