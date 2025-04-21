@@ -1,20 +1,39 @@
 version: '3.9'
-
 services:
-  stt-audio-ws:
-    build:
-      context: ./stt/audio_ws
-    container_name: stt-audio-ws
+  stt:
+    build: ./stt
+    container_name: stt
     ports:
-      - "8001:8001"
-    restart: unless-stopped
+      - "8001:8000"
+
+  llm:
+    build: ./llm
+    container_name: llm
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    ports:
+      - "8002:8000"
+
+  tester:
+    build: ./test
+    container_name: tester
+    ports:
+      - "8085:8080"
+
+  controller:
+    build: ./controller
+    container_name: controller
+    ports:
+      - "8080:8080"
+    depends_on:
+      - stt
+      - llm
+      - tester
 
   nginx:
-    image: nginx:latest
-    container_name: nginx-proxy
+    build: ./nginx
+    container_name: nginx
     ports:
-      - "8080:80"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - "80:80"
     depends_on:
-      - stt-audio-ws
+      - controller

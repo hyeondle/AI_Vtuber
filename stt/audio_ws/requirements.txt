@@ -1,6 +1,0 @@
-fastapi
-uvicorn
-faster-whisper
-numpy
-websockets
-hf_xet
