@@ -168,8 +168,6 @@ async def handle_client(ws: WebSocket):
     await ws.accept()
     print("[Controller] 클라이언트 WebSocket 연결", flush=True)
 
-    global active_stt_ws, active_llm_ws
-
     try:
         while True:
             msg = await ws.receive_text()
@@ -182,30 +180,43 @@ async def handle_client(ws: WebSocket):
                 await active_llm_ws.send(json.dumps({"text": stt_result}))
                 llm_result = await active_llm_ws.recv()
 
-                await broadcast_to_tester({
+                await active_tester_ws.send(json.dumps({"llm_response": llm_result}))
+                tts_audio_b64 = await active_tester_ws.recv()
+
+                await ws.send_text(json.dumps({
                     "input_type": "audio",
-                    "input_text": stt_result,
-                    "llm_response": llm_result
-                })
+                    "input_text": llm_result,
+                    "audio_b64": tts_audio_b64
+                }, ensure_ascii=False))
+
+                print("[Controller] 🛜 Unity로 오디오 전송 완료", flush=True)
 
             elif data["type"] == "text":
                 await active_llm_ws.send(json.dumps({"text": data["payload"]}))
                 llm_result = await active_llm_ws.recv()
 
-                await broadcast_to_tester({
-                    "input_type": "text",
-                    "input_text": data["payload"],
-                    "llm_response": llm_result
-                })
+                await active_tester_ws.send(json.dumps({"llm_response": llm_result}))
+                tts_audio_b64 = await active_tester_ws.recv()
+
+                await ws.send_text(json.dumps({
+                    "input_type": "audio",
+                    "input_text": llm_result,
+                    "audio_b64": tts_audio_b64
+                }, ensure_ascii=False))
+
+                print("[Controller] Unity로 오디오 전송 완료", flush=True)
+
     except WebSocketDisconnect:
         print("[Controller] 클라이언트 연결 종료", flush=True)
 
-async def broadcast_to_tester(result_obj: dict):
-    global active_tester_ws
-    if active_tester_ws is None:
-        print("[Controller] tester 연결 없음", flush=True)
-        return
-    try:
-        await active_tester_ws.send(json.dumps(result_obj, ensure_ascii=False))
-    except Exception as e:
-        print(f"[Controller] tester 전송 실패: {e}", flush=True)
+
+# async def broadcast_to_tester(result_obj: dict):
+#     global active_tester_ws
+#     if active_tester_ws is None:
+#         print("[Controller] tester 연결 없음", flush=True)
+#         return
+#     try:
+#         await active_tester_ws.send(json.dumps(result_obj, ensure_ascii=False))
+#         print("[Controller] tester 전송 완료", flush=True)
+#     except Exception as e:
+#         print(f"[Controller] tester 전송 실패: {e}", flush=True)
