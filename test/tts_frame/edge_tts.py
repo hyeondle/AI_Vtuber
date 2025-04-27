@@ -1,20 +1,22 @@
-import io
-import wave
-import numpy as np
 import edge_tts
-from .tts_interface import TTSEngine
+import io
+from pydub import AudioSegment
 
-class EdgeTTS(TTSEngine):
+class EdgeTTS:
     def __init__(self):
         self.voice = "ko-KR-SunHiNeural"
-        self.rate = "+0%"
 
     async def synthesize(self, text: str) -> bytes:
-        communicate = edge_tts.Communicate(text, self.voice, rate=self.rate)
-        stream = io.BytesIO()
+        communicate = edge_tts.Communicate(text, self.voice)
+        stream = communicate.stream()  # ✅ await 제거
 
-        async for chunk in communicate.stream():
+        audio_mp3_bytes = b""
+        async for chunk in stream:
             if chunk["type"] == "audio":
-                stream.write(chunk["data"])
+                audio_mp3_bytes += chunk["data"]
 
-        return stream.getvalue()
+        audio = AudioSegment.from_file(io.BytesIO(audio_mp3_bytes), format="mp3")
+        wav_io = io.BytesIO()
+        audio.export(wav_io, format="wav", parameters=["-ar", "16000", "-ac", "1"])
+
+        return wav_io.getvalue()

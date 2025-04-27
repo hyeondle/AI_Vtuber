@@ -19,7 +19,7 @@ WORKDIR /app
 COPY . .
 
 RUN pip install --no-cache-dir fastapi uvicorn websockets httpx python-dotenv \
-    edge-tts sounddevice numpy
+    edge-tts sounddevice numpy pydub
 
 # FastAPI 서버 실행
 CMD ["uvicorn", "tester_server:app", "--host", "0.0.0.0", "--port", "8080"]
