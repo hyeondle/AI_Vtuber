@@ -15,10 +15,16 @@ services:
       - "8002:8000"
 
   tester:
-    build: ./test
+    build:
+      context: ./test
     container_name: tester
     ports:
-      - "8085:8080"
+      - "8082:8080"   # 필요하면 외부에서 접근하기 위해 열어둬도 되고
+    volumes:
+      - ./output:/app/output
+    depends_on:
+      - controller
+
 
   controller:
     build: ./controller
@@ -28,7 +34,7 @@ services:
     depends_on:
       - stt
       - llm
-      - tester
+
 
   nginx:
     build: ./nginx
