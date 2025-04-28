@@ -3,7 +3,6 @@ using System.Text;
 using NativeWebSocket;
 using UnityEngine;
 using System.Threading.Tasks;
-using System.IO;
 
 public class WebSocketManager : MonoBehaviour
 {
@@ -27,39 +26,10 @@ public class WebSocketManager : MonoBehaviour
         }
 
         websocket = new WebSocket("ws://localhost/ws/");
-
-        websocket.OnOpen += () => Debug.Log("✅ WebSocket 연결 완료");
-        websocket.OnError += (e) => Debug.LogError($"❌ WebSocket 에러: {e}");
-        websocket.OnClose += (e) => Debug.Log("🔌 WebSocket 연결 종료");
-
-        websocket.OnMessage += async (bytes) =>
-        {
-            Debug.Log($"📥 WebSocket 수신: {bytes.Length} bytes");
-
-            try
-            {
-                string jsonString = Encoding.UTF8.GetString(bytes);
-                MessagePayload payload = JsonUtility.FromJson<MessagePayload>(jsonString);
-
-                if (payload.input_type == "audio")
-                {
-                    Debug.Log($"🎵 오디오 스트림 수신");
-
-                    if (mouthAnimator != null)
-                        mouthAnimator.StartSpeaking();
-
-                    await PlayAudio(payload.audio_b64);
-                }
-                else if (payload.input_type == "text")
-                {
-                    Debug.Log($"💬 텍스트 수신: {payload.input_text}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"[OnMessage] 오류 발생: {ex}");
-            }
-        };
+        websocket.OnOpen += () => { Debug.Log("✅ WebSocket 연결 완료"); };
+        websocket.OnError += (e) => { Debug.LogError($"❌ WebSocket 에러: {e}"); };
+        websocket.OnClose += (e) => { Debug.Log("🔌 WebSocket 연결 종료"); };
+        websocket.OnMessage += async (bytes) => { await HandleMessage(bytes); };
 
         await websocket.Connect();
     }
@@ -69,14 +39,47 @@ public class WebSocketManager : MonoBehaviour
         if (websocket != null)
         {
             websocket.DispatchMessageQueue();
+
+            // 🔁 재연결 로직
+            if (websocket.State == WebSocketState.Closed || websocket.State == WebSocketState.Closing)
+            {
+                TryReconnect();
+            }
         }
     }
 
-    private void OnApplicationQuit()
+    private async void TryReconnect()
     {
-        if (websocket != null)
+        Debug.LogWarning("🔁 WebSocket 재연결 시도 중...");
+        await Task.Delay(3000); // 3초 대기
+        websocket = new WebSocket("ws://localhost/ws/");
+        websocket.OnOpen += () => { Debug.Log("✅ WebSocket 재연결 완료"); };
+        websocket.OnError += (e) => { Debug.LogError($"❌ WebSocket 에러: {e}"); };
+        websocket.OnClose += (e) => { Debug.Log("🔌 WebSocket 연결 종료"); };
+        websocket.OnMessage += async (bytes) => { await HandleMessage(bytes); };
+        await websocket.Connect();
+    }
+
+    private async Task HandleMessage(byte[] bytes)
+    {
+        try
         {
-            websocket.Close();
+            string jsonString = Encoding.UTF8.GetString(bytes);
+            MessagePayload payload = JsonUtility.FromJson<MessagePayload>(jsonString);
+
+            if (payload.input_type == "audio")
+            {
+                Debug.Log("🎵 오디오 수신 및 재생 시작");
+                await PlayAudio(payload.audio_b64);
+            }
+            else if (payload.input_type == "text")
+            {
+                Debug.Log($"💬 텍스트 수신: {payload.input_text}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"[HandleMessage] 오류: {ex}");
         }
     }
 
@@ -86,37 +89,27 @@ public class WebSocketManager : MonoBehaviour
         {
             byte[] audioBytes = Convert.FromBase64String(base64Audio);
 
-            using (MemoryStream stream = new MemoryStream(audioBytes))
-            using (BinaryReader reader = new BinaryReader(stream))
-            {
-                reader.BaseStream.Seek(24, SeekOrigin.Begin);
-                int sampleRate = reader.ReadInt32();
-                reader.BaseStream.Seek(44, SeekOrigin.Begin);
+            WAV wav = new WAV(audioBytes);
+            AudioClip clip = AudioClip.Create("TTSClip", wav.SampleCount, wav.ChannelCount, wav.Frequency, false);
+            clip.SetData(wav.LeftChannel, 0);
 
-                byte[] rawData = reader.ReadBytes((int)(stream.Length - 44));
-                float[] samples = new float[rawData.Length / 2];
-                for (int i = 0; i < samples.Length; i++)
-                {
-                    short sample = BitConverter.ToInt16(rawData, i * 2);
-                    samples[i] = sample / 32768.0f;
-                }
+            audioSource.clip = clip;
+            audioSource.Play();
 
-                // 채널 수 무조건 1로 강제
-                AudioClip clip = AudioClip.Create("TTSClip", samples.Length, 1, sampleRate, false);
-                clip.SetData(samples, 0);
-
-                audioSource.clip = clip;
-                audioSource.Play();
-            }
+            // mouthAnimator는 audioSource.isPlaying을 자동 감지해서 애니메이션 상태 변경
         }
         catch (Exception ex)
         {
             Debug.LogError($"[PlayAudio] 오류: {ex}");
         }
-
         await Task.CompletedTask;
     }
 
+    private void OnApplicationQuit()
+    {
+        if (websocket != null)
+            websocket.Close();
+    }
 }
 
 [Serializable]

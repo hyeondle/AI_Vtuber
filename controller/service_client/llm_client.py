@@ -2,15 +2,6 @@ import httpx
 
 LLM_URL = "http://llm:8000/generate"
 
-# async def send_to_llm(prompt: str) -> str:
-#     async with httpx.AsyncClient() as client:
-#         try:
-#             res = await client.post(LLM_URL, json={"prompt": prompt})
-#             return res.json().get("response", "[EMPTY RESPONSE]")
-#         except Exception as e:
-#             print(f"[LLM Client] 오류: {e}", flush=True)
-#             return "[ERROR] LLM 오류"
-
 async def send_to_llm(prompt: str) -> str:
     async with httpx.AsyncClient() as client:
         try:

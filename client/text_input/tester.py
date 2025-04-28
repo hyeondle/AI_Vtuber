@@ -1,4 +1,3 @@
-# text_input/cli_text_sender.py
 import asyncio
 from send_text import send_text
 import websockets

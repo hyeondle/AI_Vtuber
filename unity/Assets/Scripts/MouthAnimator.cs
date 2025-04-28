@@ -3,14 +3,18 @@ using UnityEngine;
 public class MouthAnimator : MonoBehaviour
 {
     private Animator animator;
+    public AudioSource audioSource;
 
     private void Start()
     {
         animator = GetComponent<Animator>();
     }
 
-    public void StartSpeaking()
+    private void Update()
     {
-        animator.SetTrigger("Speak");
+        if (audioSource != null)
+        {
+            animator.SetBool("IsSpeaking", audioSource.isPlaying);
+        }
     }
 }
