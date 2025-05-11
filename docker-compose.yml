@@ -25,7 +25,6 @@ services:
     depends_on:
       - controller
 
-
   controller:
     build: ./controller
     container_name: controller
@@ -42,3 +41,9 @@ services:
       - "80:80"
     depends_on:
       - controller
+
+  redis:
+    image: redis:7
+    container_name: redis
+    ports:
+      - "6379:6379"
