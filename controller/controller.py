@@ -26,6 +26,8 @@ async def startup():
     active_tester_ws = await init_tester_ws()
     print("[Controller] 모든 WebSocket 연결 완료", flush=True)
 
+# 고민 : 딜레이를 줄이기 위해 c->stt->c->llm->c->tts 과정을 거치지 않고 바로 stt->llm->tts로 가는 방법을 고려해야 하는가?
+
 @app.websocket("/ws/")
 async def handle_client(ws: WebSocket):
     await ws.accept()

@@ -23,8 +23,9 @@ async def llm_ws(ws: WebSocket):
         while True:
             message = await ws.receive_text()
             payload = json.loads(message)
-            prompt = pre_prompt + payload.get("text", "")
+            prompt = payload.get("text", "")
             print(f"[LLM] 프롬프트 수신: {prompt}", flush=True)
+            prompt = pre_prompt + prompt
             try:
                 stream = client.models.generate_content_stream(
                     model=model,
